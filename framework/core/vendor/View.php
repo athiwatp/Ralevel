@@ -2,31 +2,31 @@
 
 namespace JayaInstitute;
 
-class View extends \Illuminate\View\Compilers\BladeCompiler {
+use \Illuminate\View\Compilers\BladeCompiler;
 
-	public function make($template, array $data = array(), $returnValue = FALSE)
+class View {
+
+	protected $result;
+
+	public function make($template = '', array $data = array(), $returnValue = FALSE)
 	{
-		$path = 'framework/app/views/'.str_replace('.', '/', $template).'.php';
+		
+		$__env = new BladeCompiler();
 
-		$compiled = $this->compile($path);
-
-		$__env = new View();
-
-		echo $compiled;
+		$compiled = $__env->compile($template);
 
 		ob_start();
 		echo eval('?>'.preg_replace("/;*\s*\?>/", "; ?>", str_replace('<?=', '<?php echo ', $compiled)));
-		$result = ob_get_contents();
+		$this->result = ob_get_contents();
 		@ob_end_clean();
 		
-		if ( $returnValue )
-		{
-			return $result;
-		}
-		
-		// echo $result;
-		return;
+		if (! $returnValue) echo $this->result;
+		return $this;
+	}
 
+	public function __toString()
+	{
+		return $this->result;
 	}
 
 }

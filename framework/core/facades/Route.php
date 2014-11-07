@@ -5,13 +5,7 @@ class Route extends Facade {
 
 	protected static function getFacadeAccessor()
 	{
-		return 'Route';	
+		return '\JayaInstitute\Route';	
 	}
-
-	protected static function addFacadeApp()
-	{
-		static::$app[static::getFacadeAccessor()] = '\JayaInstitute\Route';
-	}
-
 
 }

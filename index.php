@@ -2,4 +2,5 @@
 
 require 'framework/core/start.php';
 
-View::make('layout.app');
+echo Maen::find(10);
+View::make('layout.wow', ['menus' => ['satu', 'dua']]);

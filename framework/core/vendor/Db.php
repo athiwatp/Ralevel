@@ -52,11 +52,7 @@ abstract class Db {
 
 	public function toArray()
 	{
-		return array_map(function($value)
-		{
-			return $value instanceof ArrayableInterface ? $value->toArray() : $value;
-
-		}, $this->items);
+		return $this->items;
 	}
 
 	public function __toString()

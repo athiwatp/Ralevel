@@ -44,6 +44,7 @@
   <body class="{{{ $bodyClass or '' }}}">
 
     @yield('content')
+    @yield('content2')
 
       <!-- js placed at the end of the document so the pages load faster -->
     <script src="js/jquery.js"></script>

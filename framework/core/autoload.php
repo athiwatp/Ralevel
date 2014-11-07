@@ -7,7 +7,6 @@ return array(
 					'Facade',
 					'Config',
 					'Db',
-					'Collection',
 					'BladeCompiler',
 					'View',
 					'Controller',

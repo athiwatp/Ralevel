@@ -5,13 +5,7 @@ class Config extends Facade {
 
 	protected static function getFacadeAccessor()
 	{
-		return 'Config';	
+		return '\JayaInstitute\Config';	
 	}
-
-	protected static function addFacadeApp()
-	{
-		static::$app[static::getFacadeAccessor()] = '\JayaInstitute\Config';
-	}
-
 
 }

@@ -2,6 +2,11 @@
 
 class BladeCompiler {
 
+	protected $sectionStack = array();
+
+	protected $sections = array();
+
+
 	/**
 	 * All of the registered extensions.
 	 *
@@ -74,6 +79,63 @@ class BladeCompiler {
 
 	}
 
+	public function make($path = '', array $data = array())
+	{
+		if (isset($data['data'])) extract($data['data']);
+		$__env = $data['__env'];
+		unset($data);
+		$compiled = $__env->compile($path);
+		return eval( '?>'.preg_replace("/;*\s*\?>/", "; ?>", str_replace('<?=', '<?php echo ', $compiled)) );
+
+	}
+
+	public function startSection($section, $content = '')
+	{
+		if ($content === '')
+		{
+			ob_start() && $this->sectionStack[] = $section;
+		}
+		else
+		{
+			$this->extendSection($section, $content);
+		}
+	}
+
+	public function stopSection($overwrite = false)
+	{
+		$last = array_pop($this->sectionStack);
+
+		if ($overwrite)
+		{
+			$this->sections[$last] = ob_get_clean();
+		}
+		else
+		{
+			$this->extendSection($last, ob_get_clean());
+		}
+
+		return $last;
+	}
+
+	public function yieldContent($section, $default = '')
+	{
+		return isset($this->sections[$section]) ? $this->sections[$section] : $default;
+	}
+
+	protected function extendSection($section, $content)
+	{
+		if (isset($this->sections[$section]))
+		{
+			$content = str_replace('@parent', $content, $this->sections[$section]);
+
+			$this->sections[$section] = $content;
+		}
+		else
+		{
+			$this->sections[$section] = $content;
+		}
+	}
+
 	/**
 	 * Get the path currently being compiled.
 	 *
@@ -92,6 +154,8 @@ class BladeCompiler {
 	 */
 	public function setPath($path)
 	{
+		$path = 'framework/app/views/'.str_replace('.', '/', $path).'.php';
+
 		$this->path = $path;
 	}
 
@@ -337,7 +401,7 @@ class BladeCompiler {
 	{
 		$pattern = $this->createOpenMatcher('include');
 
-		$replace = '$1<?php echo $__env->make$2, array_except(get_defined_vars(), array(\'__data\', \'__path\')))->render(); ?>';
+		$replace = '$1<?php echo $__env->make$2, get_defined_vars()); ?>';
 
 		return preg_replace($pattern, $replace, $value);
 	}

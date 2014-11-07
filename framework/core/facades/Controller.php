@@ -5,13 +5,7 @@ class Controller extends Facade {
 
 	protected static function getFacadeAccessor()
 	{
-		return 'Controller';	
+		return '\JayaInstitute\Controller';	
 	}
-
-	protected static function addFacadeApp()
-	{
-		static::$app[static::getFacadeAccessor()] = '\JayaInstitute\Controller';
-	}
-
 
 }

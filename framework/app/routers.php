@@ -1,3 +1,3 @@
 <?php
 
-Route::add('hello/{first}/{last}', 'home', 'HomeController@hello');
+Route::add('/', 'home', 'HomeController@hello');

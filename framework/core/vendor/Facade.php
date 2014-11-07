@@ -20,7 +20,7 @@ abstract class Facade {
 			return static::$resolvedInstance[$name];
 		}
 
-		return static::$resolvedInstance[$name] = static::$app[$name];
+		return static::$resolvedInstance[$name] = $name;
 	}
 
 	public static function getFacadeRoot()
@@ -38,10 +38,8 @@ abstract class Facade {
 
 	public static function __callStatic($method, $args)
 	{
-		static::addFacadeApp();
 
 		$instanceName = static::getFacadeRoot();
-
 
 		$instance = new $instanceName();
 
