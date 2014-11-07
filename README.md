@@ -8,4 +8,4 @@ And this what I done.
 
 This can be used by newbie to create a simple apps aka for educational project. 
 Maybe you can call this garbage if you like with this. 
-Just like a shit. Dont hessisate to rate with Zero for 0 -10.
+Just like a shit. Dont hesisate to rate with Zero for 0 -10.
