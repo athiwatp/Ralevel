@@ -4,16 +4,16 @@ return array(
 
 	'vendors' => array(
 					
-					'BladeCompiler',
-					'Config',
-					'Controller',
-					'Db',
-					'Facade',
-					'Model',
-					'Route',
-					'Url',
-					'Uri',
-					'View',
+					'Illuminate/View/Compilers/BladeCompiler',
+					'JayaInstitute/Config',
+					'JayaInstitute/Controller',
+					'JayaInstitute/Db',
+					'JayaInstitute/Facade',
+					'JayaInstitute/Model',
+					'JayaInstitute/Route',
+					'JayaInstitute/Url',
+					'JayaInstitute/Uri',
+					'JayaInstitute/View',
 				),
 
 	'folders' => array(
@@ -25,7 +25,7 @@ return array(
 
 	'files' => array(
 
-					'framework/core/vendor/helpers.php',
+					'framework/core/vendor/JayaInstitute/helpers.php',
 				),
 
 );
