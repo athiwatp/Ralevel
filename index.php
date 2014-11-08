@@ -3,7 +3,7 @@
 
 define('BASEURL', '');
 define('SELF', pathinfo(__FILE__, PATHINFO_BASENAME));
-define('BASEPATH', 'framework/core/');
+define('COREPATH', 'framework/core/');
 define('APPPATH', 'framework/app');
 
 require BASEPATH.'start.php';
