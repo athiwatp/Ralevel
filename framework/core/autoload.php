@@ -4,15 +4,16 @@ return array(
 
 	'vendors' => array(
 					
-					'Facade',
-					'Config',
-					'Db',
 					'BladeCompiler',
-					'View',
+					'Config',
 					'Controller',
+					'Db',
+					'Facade',
 					'Model',
-					'Uri',
 					'Route',
+					'Url',
+					'Uri',
+					'View',
 				),
 
 	'folders' => array(
