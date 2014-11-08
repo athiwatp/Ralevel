@@ -8,12 +8,13 @@ class Uri {
 
 	public function __construct()
 	{
+		if ( ! isset(static::$uri)) 
+			static::$uri = substr((isset($_SERVER['PATH_INFO'])) ? $_SERVER['PATH_INFO'] : @getenv('PATH_INFO'), 1);
 	}
 
 	public function get()
 	{
-		if (isset(static::$uri)) return static::$uri;
-		return static::$uri = substr((isset($_SERVER['PATH_INFO'])) ? $_SERVER['PATH_INFO'] : @getenv('PATH_INFO'), 1);
+		return static::$uri;
 	}
 
 
