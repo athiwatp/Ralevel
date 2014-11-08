@@ -1,10 +1,27 @@
 <?php
 
-if ( ! function_exists('show404')) 
+if ( ! function_exists('show_404')) 
 {
-	function show404()
+	function show_404()
 	{
 		echo 'Error 404; Salah Routing...';
+	}
+}
+
+if ( ! function_exists('app')) 
+{
+	function app($name)
+	{
+		if ($instance = Facade::getApp($name)) return $instance;
+		else return $name::callMe();
+	}
+}
+
+if ( ! function_exists('base_url')) 
+{
+	function base_url($path = '')
+	{
+		return app('Url')->baseUrl();
 	}
 }
 
