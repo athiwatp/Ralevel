@@ -60,7 +60,7 @@ class Route {
 		}
 
 
-		if ($getName == '') return show404();
+		if ($getName == '') return show_404();
 
 		$getTarget = explode('@', $routes[$getName]['target']);
 
