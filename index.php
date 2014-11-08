@@ -1,6 +1,13 @@
 <?php
 
-require 'framework/core/start.php';
 
-echo Maen::find(10);
-View::make('layout.wow', ['menus' => ['satu', 'dua']]);
+define('BASEURL', '');
+define('SELF', pathinfo(__FILE__, PATHINFO_BASENAME));
+define('BASEPATH', 'framework/core/');
+define('APPPATH', 'framework/app');
+
+require BASEPATH.'start.php';
+
+View::make('layouts.app');
+
+echo Url::baseUrl();
