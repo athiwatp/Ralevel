@@ -2,12 +2,12 @@
 
 // Register semua komponen yang dibutuhkan sistem
 
-$list = require 'framework/core/autoload.php'; 
-$vendor_loc = 'framework/core/vendor/'; 
+$list = require COREPATH.'autoload.php'; 
+define('VENDORPATH', COREPATH.'vendor/'); 
 
 foreach($list['vendors'] as $vendor)
 {
-	if (file_exists($vendor_loc.$vendor.'.php')) require_once $vendor_loc.$vendor.'.php';
+	if (file_exists(VENDORPATH.$vendor.'.php')) require_once VENDORPATH.$vendor.'.php';
 }
 
 foreach($list['folders'] as $directory) 
@@ -25,10 +25,8 @@ foreach($list['files'] as $file)
 	if (file_exists($file)) require_once $file;
 }
 
-
-
 // -----------------------------------------------------------------------------------------
 
-require_once 'framework/app/routers.php';
+require_once APPPATH.'routers.php';
 
 Route::start();

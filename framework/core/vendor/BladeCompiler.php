@@ -154,7 +154,7 @@ class BladeCompiler {
 	 */
 	public function setPath($path)
 	{
-		$path = 'framework/app/views/'.str_replace('.', '/', $path).'.php';
+		$path = APPPATH.'views/'.str_replace('.', '/', $path).'.php';
 
 		$this->path = $path;
 	}

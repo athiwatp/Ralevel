@@ -8,7 +8,7 @@ class Config {
 
 	public function __construct()
 	{
-		$items = require 'framework/app/config.php';
+		$items = require APPPATH.'config.php';
 
 		static::$items = $items;
 	}
