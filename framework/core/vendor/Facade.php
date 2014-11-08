@@ -6,9 +6,16 @@ abstract class Facade {
 
 	protected static $app;
 
-	protected static function addFacadeApp()
+	public static function getApp($name)
 	{
-		static::$app[$name] = $app;
+		if (isset(static::$app[$name])) return static::$app[$name];
+	}
+
+	public static function callMe()
+	{
+		$instanceName = static::getFacadeRoot();
+
+		return static::$app[get_called_class()] = (is_object($instanceName)) ? $instanceName : new $instanceName();
 	}
 
 	protected static function resolveFacadeInstance($name)
@@ -38,10 +45,7 @@ abstract class Facade {
 
 	public static function __callStatic($method, $args)
 	{
-
-		$instanceName = static::getFacadeRoot();
-
-		$instance = new $instanceName();
+		$instance = static::callMe();
 
 		switch (count($args))
 		{
