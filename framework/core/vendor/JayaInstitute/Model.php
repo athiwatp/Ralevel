@@ -4,13 +4,35 @@ abstract class Model {
 
 	protected static $booted;
 
+	protected static function getLoadedClass()
+	{
+		return get_called_class().'Model';
+	}
+
+	public function __get($key)
+	{
+		$instance = static::createNewInstance(static::getLoadedClass());
+		
+		return $instance->$key;
+	}
+
+	public function __set($key, $value)
+	{
+		$instance = static::createNewInstance(static::getLoadedClass());
+		
+		return $instance->$key = $value;
+	}
+
 	public static function __callStatic($method, $args)
 	{
-		$instance = get_called_class().'_boot';
+		$instance = static::createNewInstance(static::getLoadedClass());
 
-		if (isset(static::$booted[$instance])) 
-			return call_user_func_array(array(static::$booted[$instance], $method), $args);
-		
+		return call_user_func_array(array($instance, $method), $args);
+	}
+
+	protected static function createNewInstance($instance)
+	{
+		if (isset(static::$booted[$instance])) return static::$booted[$instance];
 		$vars = get_object_vars(new static($instance));
 		$code = "namespace JayaInstitute; \r\n";
 		$code = "class $instance extends \JayaInstitute\Db { \r\n";
@@ -25,9 +47,14 @@ abstract class Model {
 
 		$newInstance = new $instance();
 
-		static::$booted[$instance] = $newInstance;
+		return static::$booted[$instance] = $newInstance;
+	}
 
-		return call_user_func_array(array($newInstance, $method), $args);
+	public function __call($method, $args)
+	{	
+		$instance = static::createNewInstance(static::getLoadedClass());
+
+		return call_user_func_array(array($instance, $method), $args);
 	}
 
 }
