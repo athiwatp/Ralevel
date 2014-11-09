@@ -8,6 +8,8 @@ abstract class Db {
 
 	protected static $booted = array();
 
+	protected $readyAction;
+
 	protected $sql;
 
 	protected $table;
@@ -36,10 +38,8 @@ abstract class Db {
 
 	protected $numRows;
 	
-	public function __construct(array $items = array())
+	public function __construct()
 	{
-		$this->items = $items;
-
 		extract($config = \Config::get('database'));
 
 		static::$connection = mysqli_connect($host, $username, $password, $database, $port);
@@ -97,14 +97,33 @@ abstract class Db {
 		{
 			$value = '';
 		}
-		else $value = (is_numeric($value) ? $value : '\''.$value.'\'');
+		elseif (is_array($value)) 
+		{
+			if (empty($value)) return $this;
 
-		$clause = strtoupper($boolean).' '.'`'.$column.'` '.$operator.' '.$value;
+			$this->wheres[] = $this->whereClause($column, $operator,  array_shift($value), $boolean);
 
-		$this->wheres[] = $clause;
+			return $this->orWhere($column, $operator, $value);
+		}
+		elseif (count($values = explode(',', $value)) > 0) 
+		{
+			return $this->where($column, $operator, $values);
+		}
+		else 
+		{
+			$value = trim($value);
+			$value = (is_numeric($value) ? $value : '\''.$value.'\'');
+		}
+
+		$this->wheres[] = $this->whereClause($column, $operator,  $value, $boolean);
 
 		return $this;
 
+	}
+
+	protected function whereClause($column, $operator,  $value, $boolean)
+	{
+		return strtoupper($boolean).' '.'`'.$column.'` '.$operator.' '.$value;
 	}
 
 	public function orWhere($column, $operator = null, $value = null)
@@ -206,7 +225,7 @@ abstract class Db {
 
 	public function find($id, $columns = array('*'))
 	{
-		return $this->where($this->primaryKey, '=', $id)->first($columns);
+		return $this->distinct()->where($this->primaryKey, '=', $id)->get($columns);
 	}
 
 	public function first($columns = array('*'))
@@ -224,7 +243,7 @@ abstract class Db {
 		$wheres = $this->wheres;
 
 		
-		$sql  = 'SELECT '.$columns.' FROM '.$this->getTable();
+		$sql  = 'SELECT '.($this->distinct ? 'DISTINCT ': '').$columns.' FROM '.$this->getTable();
 		
 		if (! empty($wheres))
 			$sql .= ' WHERE '.ltrim(array_shift($wheres), 'OR AND').' '.implode(' ', $wheres);
@@ -283,7 +302,52 @@ abstract class Db {
 			$this->items[] = $row;
 		}
 
+		if (! empty($this->items) ) $this->readyAction = 'update/delete';
+		
 		return $this;
+	}
+
+	public function create($items = array())
+	{
+		if ($items == array()) return;
+		$this->readyAction = 'insert';
+		$this->items = $items;
+		$this->save();
+		return $this;
+	}
+
+	public function update($items = array())
+	{
+		if ($items == array()) return;
+		$this->readyAction = 'update';
+		$this->items = (!array_key_exists(0, $this->items)) ? array_merge($this->items, $items) : array_map(function($v){return array_merge($v, $items); }, $this->items);
+		$this->save();
+		return $this;
+	}
+
+	public function delete()
+	{
+		
+	}
+
+	public function saveUrl()
+	{
+		$items = $this->items;
+
+		if (empty($items)) return '';
+		
+		if (isset($this->fillable) && is_array($this->fillable) && ! empty($this->fillable)) 
+			$items = array_intersect_key($items, $this->fillable);
+
+		if (isset($this->guarded) && is_array($this->guarded) && ! empty($this->guarded)) 
+			$items = array_diff_key($items, $this->guarded);
+
+		return $this->$sql = ($this->readyAction == 'insert') ? $this->buildInsert() : $this->buildUpdate();
+	}
+
+	protected function buildInsert()
+	{
+
 	}
 
 	public function __get($key)

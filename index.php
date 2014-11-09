@@ -11,13 +11,13 @@ require COREPATH.'start.php';
 View::make('layout.app');
 
 // echo Url::baseUrl();
-$tes = (new Maen())->find(5);
-echo $tes->nama;
-$tes->nama = 'ROfiudin';
-$tes->alamat = 'Batang';
-echo $tes->toString();
+$tes = new Maen;
+// $tes->nama = 'ROfiudin';
+// $tes->alamat = 'Batang';
+// echo $tacho = $tes->toString();
 
-
+echo $tes->find('1, 20');
+// print_r($tacho);
 
 // echo Maen::select('nama', 'alamat')->take(10)->get();
 
