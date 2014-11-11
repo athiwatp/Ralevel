@@ -4,11 +4,13 @@ namespace JayaInstitute;
 
 abstract class Db {
 	
-	protected static $connection;
+	protected $connection;
 
 	protected static $booted = array();
 
-	protected $readyAction;
+	protected $readyAction = 'insert';
+
+	protected $row = 1;
 
 	protected $sql;
 
@@ -26,7 +28,7 @@ abstract class Db {
 
 	protected $group;
 
-	protected $having;
+	protected $havings = array();
 
 	protected $order;
 
@@ -36,13 +38,13 @@ abstract class Db {
 
 	protected $items = array();
 
-	protected $numRows;
+	protected $numRows = 0;
 	
 	public function __construct()
 	{
 		extract($config = \Config::get('database'));
 
-		static::$connection = mysqli_connect($host, $username, $password, $database, $port);
+		$this->connection = mysqli_connect($host, $username, $password, $database, $port);
 	}
 
 	public function select($columns = array('*'))
@@ -75,47 +77,56 @@ abstract class Db {
 		return $this;
 	}
 
-	public function where($column, $operator = null, $value = null, $boolean = 'and')
+	protected function escapeQuote($value)
+	{
+		$value = mysqli_escape_string($this->connection, $value);
+		return (is_numeric($value)) ? $value : '\''.$value.'\'';
+	}
+
+	public function where($column, $operator = null, $value = null, $boolean = 'and', $var = 'wheres')
 	{
 		if ($operator == null) 
 		{
-			$this->wheres[] = strtoupper($boolean).' '.$column;
+			$this->{$var}[] = strtoupper($boolean).' '.$column;
+	
 			return $this;
 		}
 		
 		$operator = strtoupper(trim($operator));
 		
-		if ($operator == 'BETWEEN' OR $operator == 'NOT BETWEEN')
+		if (is_array($value)) 
 		{
-			$value = implode(' AND ', array_slice(array_map(function($item){ $newItem = str_replace('\'', '\'\'', trim($item)); return (is_numeric($newItem)) ? $newItem : '\''.$newItem.'\'';}, explode(',', $value)), 0, 2));
+			if (empty($value)) return $this;
+
+			return $this->where($column, $operator, implode(', ', $value), $boolean, $var);
+
+		}
+		elseif ($operator == 'BETWEEN' OR $operator == 'NOT BETWEEN')
+		{
+			$value = implode(' AND ', array_slice(array_map(function($item){ return $this->escapeQuote($item);}, explode(',', $value)), 0, 2));
 		}
 		elseif ($operator == 'IN' OR $operator == 'NOT IN')
 		{
-			$value = '('.implode(' ', array_slice(array_map(function($item){ $newItem = str_replace('\'', '\'\'', trim($item)); return (is_numeric($newItem)) ? $newItem : '\''.$newItem.'\'';}, explode(',', $value)), 0, 2)).')';
+			$value = '('.implode(', ', array_map(function($item){ return $this->escapeQuote($item);}, explode(',', $value))).')';
 		}
 		elseif ($operator == 'IS NULL' OR $operator == 'IS NOT NULL')
 		{
 			$value = '';
 		}
-		elseif (is_array($value)) 
+		elseif (count(explode(',', $value)) > 0) 
 		{
-			if (empty($value)) return $this;
+			$value = explode(',', $value);
 
-			$this->wheres[] = $this->whereClause($column, $operator,  array_shift($value), $boolean);
+			$this->{$var}[] = $this->whereClause($column, $operator,  $this->escapeQuote(array_shift($value)), $boolean);
 
-			return $this->orWhere($column, $operator, $value);
-		}
-		elseif (count($values = explode(',', $value)) > 0) 
-		{
-			return $this->where($column, $operator, $values);
+			return $this->where($column, $operator, $value, 'or', $var);
 		}
 		else 
 		{
-			$value = trim($value);
-			$value = (is_numeric($value) ? $value : '\''.$value.'\'');
+			$value = $this->escapeQuote($value);
 		}
 
-		$this->wheres[] = $this->whereClause($column, $operator,  $value, $boolean);
+		$this->{$var}[] = $this->whereClause($column, $operator,  $value, $boolean);
 
 		return $this;
 
@@ -134,44 +145,19 @@ abstract class Db {
 	public function groupBy($columns)
 	{
 		$this->group = $columns;
+		
 		return $this;
 	}
 
-	public function having($column, $operator = null, $value = null)
+	public function having($column, $operator = null, $value = null, $boolean = 'and')
 	{
-		if ($operator == null) 
-		{
-			$this->having = $column;
-			return $this;
-		}
-		
-		$operator = strtoupper(trim($operator));
-		
-		if ($operator == 'BETWEEN' OR $operator == 'NOT BETWEEN')
-		{
-			$value = implode(' AND ', array_slice(array_map(function($item){ $newItem = str_replace('\'', '\'\'', trim($item)); return (is_numeric($newItem)) ? $newItem : '\''.$newItem.'\'';}, explode(',', $value)), 0, 2));
-		}
-
-		if ($operator == 'IN' OR $operator == 'NOT IN')
-		{
-			$value = '('.implode(' ', array_slice(array_map(function($item){ $newItem = str_replace('\'', '\'\'', trim($item)); return (is_numeric($newItem)) ? $newItem : '\''.$newItem.'\'';}, explode(',', $value)), 0, 2)).')';
-		}
-
-		if ($operator == 'IS NULL' OR $operator == 'IS NOT NULL')
-		{
-			$value = '';
-		}
-
-		$clause = $column.' '.$operator.' '.$value;
-
-		$this->having = $clause;
-
-		return $this;
+		return $this->where($column, $operator, $value, $boolean, 'havings');
 	}	
 
 	public function orderBy($column, $direction = 'asc')
 	{
 		$this->order = $column.(strtoupper($direction) == 'ASC' ? ' ASC' : ' DESC');
+	
 		return $this;
 	}
 
@@ -188,6 +174,7 @@ abstract class Db {
 	public function offset($value)
 	{
 		$this->offset = max(0, $value);
+		
 		return $this;
 	}
 
@@ -199,6 +186,7 @@ abstract class Db {
 	public function limit($value)
 	{
 		if ($value > 0) $this->limit = $value;
+	
 		return $this;
 	}
 
@@ -215,6 +203,7 @@ abstract class Db {
 	public function sql($value='')
 	{
 		$this->sql = $value;
+		
 		return $this;
 	}
 
@@ -233,15 +222,19 @@ abstract class Db {
 		$results = $this->take(1)->get($columns)->toArray();
 
 		$this->items = count($results) > 0 ? reset($results) : null;
+		
 		return $this;
 	}
 
 	protected function buildSelect($columns = array('*'))
 	{
 		if (empty($this->columns) OR $columns != array('*')) $this->select($columns); 
+		
 		$columns = ! is_array($this->columns) ? $this->columns : implode(', ', $this->columns);
+		
 		$wheres = $this->wheres;
 
+		$havings = $this->havings;
 		
 		$sql  = 'SELECT '.($this->distinct ? 'DISTINCT ': '').$columns.' FROM '.$this->getTable();
 		
@@ -251,8 +244,8 @@ abstract class Db {
 		if (! empty($this->group))
 			$sql .= ' GROUP BY '.$this->group;
 
-		if (! empty($this->having))
-			$sql .= ' HAVING '.$this->having;
+		if (! empty($havings))
+			$sql .= ' HAVING '.ltrim(array_shift($havings), 'OR AND').' '.implode(' ', $havings);
 
 		if (! empty($this->order))
 			$sql .= ' ORDER BY '.$this->order;
@@ -268,13 +261,15 @@ abstract class Db {
 
 	protected function reset()
 	{
+		$this->row = 1;
+
 	 	$this->distinct = false;
 
 	 	$this->wheres = array();
 
 	 	$this->group = '';
 
-	 	$this->having = '';
+	 	$this->havings = array();
 
 	 	$this->order = '';
 
@@ -283,6 +278,8 @@ abstract class Db {
 	 	$this->limit = '';
 
 	 	$this->items = array();
+
+	 	$this->numRows = 0;
 	}
 
 	public function get($columns = array('*'))
@@ -290,7 +287,11 @@ abstract class Db {
 		$this->sql = $sql = ($this->buildSelect($columns));
 
 		$this->reset();
-		$query = mysqli_query(static::$connection, $sql);
+		
+		$this->readyAction = 'update/delete';
+
+		if (!$query = mysqli_query($this->connection, $sql)) return $this;
+		
 		$this->numRows = $query->num_rows;
 
 		while ($row = mysqli_fetch_array($query)) 
@@ -302,63 +303,231 @@ abstract class Db {
 			$this->items[] = $row;
 		}
 
-		if (! empty($this->items) ) $this->readyAction = 'update/delete';
-		
 		return $this;
 	}
 
-	public function create($items = array())
+	public function numRows()
 	{
-		if ($items == array()) return;
+		return $this->numRows;
+	}
+
+	public function create($items = array(), $returnSql = false)
+	{
 		$this->readyAction = 'insert';
+
 		$this->items = $items;
-		$this->save();
-		return $this;
+		
+		if ($items == array()) return $this;
+		
+		if ($returnSql) return $this->saveSql();
+		
+		return $this->save();
 	}
 
-	public function update($items = array())
+	public function update($items = array(), $returnSql = false)
 	{
-		if ($items == array()) return;
+		if ($items == array()) return $this;
+		
 		$this->readyAction = 'update';
-		$this->items = (!array_key_exists(0, $this->items)) ? array_merge($this->items, $items) : array_map(function($v){return array_merge($v, $items); }, $this->items);
-		$this->save();
+
+		$oldItems = $this->items;
+
+		if (empty($oldItems)) return $this;
+
+		if (!array_key_exists(0, $oldItems))
+		{
+			$this->items = array_merge($oldItems, $items);
+		}
+		else
+		{
+			array_walk($oldItems, function(&$value, $key, $items){ $value = array_merge($value, $items); }, $items);
+			$this->items = $oldItems;
+		}
+		
+		if ($returnSql) return $this->saveSql();
+	
+		return $this->save();
+	}
+
+	public function save($boolean = true)
+	{
+		$this->saveSql(false);
+		
 		return $this;
 	}
 
 	public function delete()
 	{
-		
+		$this->deleteSql(false);
+
+		return $this;
 	}
 
-	public function saveUrl()
+	public function deleteSql($toSql = true)
+	{
+		if ($this->readyAction != 'update/delete') return $this;
+	
+		$sql = '';		
+
+		$deleteKey = $this->itemsToDelete();
+
+		if (empty($deleteKey)) return $this->$sql = '';
+		
+		foreach ($deleteKey as $key) {
+			
+			$sql .= $sqlSyntax = 'DELETE FROM '.$this->getTable().' WHERE '.$this->primaryKey.' = '.$this->escapeQuote($key).'; ';
+
+			if (!$toSql)
+			{
+				$query = mysqli_query($this->connection, $sqlSyntax);
+			}
+		}
+
+		$this->find($deleteKey);
+
+		return $this->sql = $sql;
+	}
+
+	public function saveSql($toSql = true)
+	{
+		$sql = '';		
+
+		$items = $this->itemsToSave();
+
+		if (empty($items)) return $this->$sql = '';
+		
+		$inserted_id = array();
+
+		foreach ($items as $item) {
+	
+			$sql .= $sqlSyntax = ($this->readyAction == 'insert') ? $this->buildInsert($item) : $this->buildUpdate($item);
+	
+			if (!$toSql) 
+			{
+				$query = mysqli_query($this->connection, $sqlSyntax);
+	
+				$inserted_id[] = ($this->readyAction == 'insert') ? mysqli_insert_id($this->connection) : $item[$this->primaryKey];
+			}
+	
+		}
+
+		if ( ! empty($inserted_id))  $this->find($inserted_id);
+			
+		return $this->sql = $sql;
+	}
+
+	protected function itemsToSave()
 	{
 		$items = $this->items;
 
-		if (empty($items)) return '';
+		if (empty($items)) return array();
 		
-		if (isset($this->fillable) && is_array($this->fillable) && ! empty($this->fillable)) 
-			$items = array_intersect_key($items, $this->fillable);
+		if (!array_key_exists(0, $items)) $items = array($items);
 
-		if (isset($this->guarded) && is_array($this->guarded) && ! empty($this->guarded)) 
-			$items = array_diff_key($items, $this->guarded);
+		$newItems = array();
 
-		return $this->$sql = ($this->readyAction == 'insert') ? $this->buildInsert() : $this->buildUpdate();
+		foreach ($items as $item) {
+
+			if (empty($item)) continue;
+
+			if (!isset($item[$this->primaryKey]) && $this->readyAction == 'update/delete') continue;
+
+			if (isset($this->fillable) && is_array($this->fillable) && ! empty($this->fillable)) 
+				$item = array_intersect_key($item, $this->fillable);
+	
+			if (isset($this->guarded) && is_array($this->guarded) && ! empty($this->guarded)) 
+				$item = array_diff_key($item, $this->guarded);
+
+			$newItems[] = $item;
+		
+		}
+		
+		return $newItems;
 	}
 
-	protected function buildInsert()
+	protected function itemsToDelete()
 	{
+		$items = $this->items;
 
+		if (empty($items)) return array();
+		
+		if (!array_key_exists(0, $items)) $items = array($items);
+
+		$deleteKey = array();
+
+		foreach ($items as $item) {
+
+			if (empty($item)) continue;
+
+			if (!isset($item[$this->primaryKey]) && $this->readyAction == 'update/delete') continue;
+
+			$deleteKey[] = $item[$this->primaryKey];
+		
+		}
+		
+		return $deleteKey;
+	}
+
+	protected function buildInsert($item)
+	{
+		$columns = array_keys($item);
+	
+		$values = array_values($item);
+
+		return $sql = 'INSERT INTO '.$this->getTable().' ('.implode(', ', $columns).') VALUES ('.implode(', ', array_map(function(&$v){ return $this->escapeQuote($v);}, $values)).'); ';
+	}
+
+	public function buildUpdate($items)
+	{
+		$item = $items;
+
+		$pKey = $this->primaryKey;
+
+		$pValue = $items[$pKey];
+
+		$item = array_diff_key($item, array($pKey => ''));
+		
+		array_walk($item, function(&$value, $key){ $value = $this->escapeQuote($value); $value = $key.' = '.$value;});
+		
+		$values = array_values($item);
+
+		return $sql = 'UPDATE '.$this->getTable().' SET '.implode(', ', $values).' WHERE '.$pKey.' = '.$this->escapeQuote($pValue).'; ';
+	}
+
+	public function row($value = 1, $items = array())
+	{
+		$this->row = min(count($this->items) + 1, $value);
+
+		foreach ($items as $key => $value) {
+			$this->$key = $value;
+		}
+
+		return $this;
 	}
 
 	public function __get($key)
 	{
-		if (array_key_exists($key, $this->items)) return $this->items[$key];
+		if (empty($this->items)) return '';
+
+		$row = $this->row - 1;
+		
+		if (array_key_exists($key, $this->items[$row])) return $this->items[$row][$key];
+	
 		return '';
 	}
 
 	public function __set($key, $value = '')
 	{
-		$this->items[$key] = $value;
+		if ($key == '') return;
+
+		$row = ($this->row) - 1;
+
+		if (count($this->items) == $row) $this->items[] = array();
+
+		if (!isset($this->items[$row])) return;
+
+		$this->items[$row][$key] = $value;
+	
 		return;
 	}
 
@@ -366,7 +535,7 @@ abstract class Db {
 	{
 		if (isset($this->table) && ! empty($this->table)) return $this->table;
 
-		return str_replace('\\', '', class_basename($this));
+		return strtolower(substr($class = str_replace('\\', '', class_basename($this)), 0, strlen($class) - 5));
 	}
 
 	public function toArray()
@@ -385,5 +554,11 @@ abstract class Db {
 		return $this->toString();
 	}
 	
+	public function tesEscape()
+	{
+		$tes = "select * from tes where nama = 'bejo'";
+		var_dump(mysqli_escape_string($this->connection, $tes));
+	}
+
 }
 
