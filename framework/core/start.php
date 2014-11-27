@@ -26,7 +26,3 @@ foreach($list['files'] as $file)
 }
 
 // -----------------------------------------------------------------------------------------
-
-require_once APPPATH.'routers.php';
-
-Route::start();

@@ -6,7 +6,7 @@ abstract class Model {
 
 	protected static function getLoadedClass()
 	{
-		return get_called_class().'Model';
+		return get_called_class();
 	}
 
 	public function __get($key)
@@ -33,19 +33,18 @@ abstract class Model {
 	protected static function createNewInstance($instance)
 	{
 		if (isset(static::$booted[$instance])) return static::$booted[$instance];
-		$vars = get_object_vars(new static($instance));
-		$code = "namespace JayaInstitute; \r\n";
-		$code = "class $instance extends \JayaInstitute\Db { \r\n";
+		$namespace = 'Ralevel\\Model';
 
-		foreach ($vars as $key => $value) {
-			$code .= "protected \$$key = '$value'; \r\n";
-		}
+		$path = APPPATH.'models/'.$instance.'.php';
+		$code = file_get_contents($path);
 
-		$code .= '}';
+		$code = str_replace('<?php', "namespace $namespace; ", $code);
+		$code = preg_replace('/(extends).+(\{)+/', 'extends \JayaInstitute\Db {', $code);
 
 		eval($code);
 
-		$newInstance = new $instance();
+		$newInstance = '\\'.$namespace.'\\'.$instance;
+		$newInstance = new $newInstance();
 
 		return static::$booted[$instance] = $newInstance;
 	}

@@ -3,9 +3,15 @@
 
 class HomeController extends Controller {
 
-	public static function hello($first, $last)
+	public function hello()
 	{
-		echo "Hello, $first $last";
+		return HomeController::tes();
+		return View::make('layout/wow', ['title' => 'Hello World']);
+	}
+
+	public function tes()
+	{
+		return Tes::find(3)->rr();
 	}
 
 }

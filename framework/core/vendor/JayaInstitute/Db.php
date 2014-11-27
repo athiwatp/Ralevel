@@ -14,6 +14,10 @@ abstract class Db {
 
 	protected $sql;
 
+	protected $fillable = array();
+
+	protected $guarded = array('_method');
+
 	protected $table;
 
 	protected $primaryKey = 'id';
@@ -80,11 +84,23 @@ abstract class Db {
 	protected function escapeQuote($value)
 	{
 		$value = mysqli_escape_string($this->connection, $value);
-		return (is_numeric($value)) ? $value : '\''.$value.'\'';
+		return '\''.$value.'\'';
+		// return (is_numeric($value)) ? $value : '\''.$value.'\'';
 	}
 
 	public function where($column, $operator = null, $value = null, $boolean = 'and', $var = 'wheres')
 	{
+		if (is_array($column)) 
+		{
+			if (empty($column)) return $this;
+
+			foreach ($column as $key => $value) {
+				$this->where($key, '=', $value);
+			}
+
+			return $this;
+		}
+
 		if ($operator == null) 
 		{
 			$this->{$var}[] = strtoupper($boolean).' '.$column;
@@ -286,6 +302,7 @@ abstract class Db {
 	{
 		$this->sql = $sql = ($this->buildSelect($columns));
 
+
 		$this->reset();
 		
 		$this->readyAction = 'update/delete';
@@ -311,7 +328,7 @@ abstract class Db {
 		return $this->numRows;
 	}
 
-	public function create($items = array(), $returnSql = false)
+	public function create($items = array(), $returnSql = false, $__callback = null)
 	{
 		$this->readyAction = 'insert';
 
@@ -320,11 +337,19 @@ abstract class Db {
 		if ($items == array()) return $this;
 		
 		if ($returnSql) return $this->saveSql();
-		
-		return $this->save();
+
+
+		$boolean = (is_callable($__callback)) ? value($__callback($items)) : true;
+
+		return ($boolean) ? $this->save() : $this;
 	}
 
-	public function update($items = array(), $returnSql = false)
+	public function insert($items = array(), $returnSql = false, $__callback = null)
+	{
+		return $this->create($items, $returnSql, $__callback);
+	}
+
+	public function update($items = array(), $returnSql = false, $__callback = null)
 	{
 		if ($items == array()) return $this;
 		
@@ -343,10 +368,13 @@ abstract class Db {
 			array_walk($oldItems, function(&$value, $key, $items){ $value = array_merge($value, $items); }, $items);
 			$this->items = $oldItems;
 		}
+
 		
 		if ($returnSql) return $this->saveSql();
-	
-		return $this->save();
+
+		$boolean = (is_callable($__callback)) ? value($__callback($items)) : true;
+
+		return ($boolean) ? $this->save() : $this;
 	}
 
 	public function save($boolean = true)
@@ -394,6 +422,7 @@ abstract class Db {
 
 		$items = $this->itemsToSave();
 
+
 		if (empty($items)) return $this->$sql = '';
 		
 		$inserted_id = array();
@@ -433,10 +462,10 @@ abstract class Db {
 			if (!isset($item[$this->primaryKey]) && $this->readyAction == 'update/delete') continue;
 
 			if (isset($this->fillable) && is_array($this->fillable) && ! empty($this->fillable)) 
-				$item = array_intersect_key($item, $this->fillable);
+				$item = array_intersect_key($item, array_flip($this->fillable));
 	
 			if (isset($this->guarded) && is_array($this->guarded) && ! empty($this->guarded)) 
-				$item = array_diff_key($item, $this->guarded);
+				$item = array_diff_key($item, array_flip($this->guarded));
 
 			$newItems[] = $item;
 		
@@ -510,8 +539,8 @@ abstract class Db {
 		if (empty($this->items)) return '';
 
 		$row = $this->row - 1;
-		
-		if (array_key_exists($key, $this->items[$row])) return $this->items[$row][$key];
+
+		if (isset($this->items[$row]) && array_key_exists($key, $this->items[$row])) return $this->items[$row][$key];
 	
 		return '';
 	}
@@ -535,7 +564,12 @@ abstract class Db {
 	{
 		if (isset($this->table) && ! empty($this->table)) return $this->table;
 
-		return strtolower(substr($class = str_replace('\\', '', class_basename($this)), 0, strlen($class) - 5));
+		return strtolower($class = str_replace('\\', '', class_basename($this)));
+	}
+
+	public function all($columns = array('*'))
+	{
+		return $this->get($columns);
 	}
 
 	public function toArray()
@@ -549,6 +583,11 @@ abstract class Db {
 		return json_encode($this->toArray());
 	}
 
+	public function toObject()
+	{
+		return json_decode(json_encode($this->toArray()[0]), false);
+	}
+
 	public function __toString()
 	{
 		return $this->toString();
@@ -560,5 +599,10 @@ abstract class Db {
 		var_dump(mysqli_escape_string($this->connection, $tes));
 	}
 
+	public function __call($method, $args)
+	{
+		$class = get_called_class();
+		if (!array_key_exists($method, get_class_methods($class))) throw new \Exception("Cannot Find Method $class::$method()", 1);
+	}
 }
 

@@ -14,6 +14,8 @@ class BladeCompiler {
 	 */
 	protected $extensions = array();
 
+	protected $data = array();
+
 	/**
 	 * The file currently being compiled.
 	 *
@@ -81,8 +83,10 @@ class BladeCompiler {
 
 	public function make($path = '', array $data = array())
 	{
-		if (isset($data['data'])) extract($data['data']);
+		// print_r($data);
 		$__env = $data['__env'];
+		if (isset($data['data'])) $__env->data = array_merge($__env->data, $data['data']); 
+		extract($__env->data);
 		unset($data);
 		$compiled = $__env->compile($path);
 		return eval( '?>'.preg_replace("/;*\s*\?>/", "; ?>", str_replace('<?=', '<?php echo ', $compiled)) );

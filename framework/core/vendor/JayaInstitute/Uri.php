@@ -17,5 +17,10 @@ class Uri {
 		return static::$uri;
 	}
 
+	public function requestMethod()
+	{
+		return $_SERVER['REQUEST_METHOD'];
+	}
+
 
 }

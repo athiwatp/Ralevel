@@ -1,3 +1,5 @@
 <?php
 
-Route::add('/', 'home', 'HomeController@hello');
+Route::add('', 'home', function(){
+	return View::make('layout/wow', ['title' => 'tesssssss', 'menus' => [['name' => 'dua']]]);
+});

@@ -5,27 +5,34 @@ return array(
 	'vendors' => array(
 					
 					'Illuminate/View/Compilers/BladeCompiler',
+					'JayaInstitute/Auth',
 					'JayaInstitute/Config',
-					'JayaInstitute/Controller',
 					'JayaInstitute/Db',
 					'JayaInstitute/Facade',
+					'JayaInstitute/Hash',
+					'JayaInstitute/Input',
 					'JayaInstitute/Model',
+					'JayaInstitute/Redirect',
+					'JayaInstitute/Request',
 					'JayaInstitute/Route',
+					'JayaInstitute/Session',
 					'JayaInstitute/Url',
-					'JayaInstitute/Uri',
 					'JayaInstitute/View',
+					'Ralevel/Ralevel',
+					'Ralevel/Controller',
 				),
 
 	'folders' => array(
 
-					'framework/core/facades/',
-					'framework/app/controllers/',
-					'framework/app/models/',
+					COREPATH.'facades/',
+					APPPATH.'models/',
 				), 
 
 	'files' => array(
 
-					'framework/core/vendor/JayaInstitute/helpers.php',
+					COREPATH.'vendor/JayaInstitute/helpers.php',
+					APPPATH.'filters.php',
+					APPPATH.'routers.php',
 				),
 
 );

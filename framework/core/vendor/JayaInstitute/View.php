@@ -13,7 +13,9 @@ class View {
 		
 		$__env = new BladeCompiler();
 
-		$compiled = $__env->compile($template);
+		$_data = array_merge(array('data' => $data), array('__env'  => $__env));
+
+		$compiled = $__env->make($template, $_data);
 
 		ob_start();
 		echo eval('?>'.preg_replace("/;*\s*\?>/", "; ?>", str_replace('<?=', '<?php echo ', $compiled)));
