@@ -9,7 +9,7 @@ class Request {
 	public function uri()
 	{
 		if (isset(static::$uri)) return static::$uri;
-		return static::$uri = static::$uri = array_key_exists('REQUEST_URI', $_SERVER) ? str_replace(basename(\Url::baseUrl()).'/', '', (substr($_SERVER['REQUEST_URI'], 1))) : substr((isset($_SERVER['PATH_INFO'])) ? $_SERVER['PATH_INFO'] : @getenv('PATH_INFO'), 1);
+		return static::$uri = array_key_exists('REQUEST_URI', $_SERVER) ? str_replace(basename(\Url::baseUrl()).'/', '', (substr($_SERVER['REQUEST_URI'], 1))) : substr((isset($_SERVER['PATH_INFO'])) ? $_SERVER['PATH_INFO'] : @getenv('PATH_INFO'), 1);
 	}
 
 	public function path()
