@@ -53,6 +53,8 @@ class Session {
 	 	foreach ($readRaw as $item) {
 	 		$item = explode('=', $item);
 	 		$value = str_replace('<titikkoma>', ';', $item[1]);
+	 		$value = str_replace('<samadengan>', '=', $value);
+	 		$value = str_replace('<petikdua>', '"', $value);
 	 		$data[$item[0]] = (substr($value, 0, 1) == '[' && substr($value, -1, 1) == ']') ? json_decode(substr($value, 1, strlen($value) -2), true) : $value; 
 	 	}
 
@@ -71,6 +73,8 @@ class Session {
 
 		foreach ($data as $key => $value) {
 			$value = str_replace(';', '<titikkoma>', $value);
+			$value = str_replace('=', '<samadengan>', $value);
+			$value = str_replace('"', '<petikdua>', $value);
 			if (is_array($value)) $value = '['.json_encode($value).']';
 			$raw[] = implode('=', array($key, $value));
 		}
